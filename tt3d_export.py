@@ -75,13 +75,6 @@ def _convert_latents_to_pointclouds(
 
     #
 
-    Utils.Storage.build_prompt_pointcloud_filepath(
-        out_rootpath=source_rootpath,
-        prompt=prompt,
-        assert_exists=False,
-        idx=0,
-    ).parent.mkdir(parents=True, exist_ok=True)
-
     pointclouds: List[PointCloud] = sampler.output_to_point_clouds(output=latents)
 
     for idx, pointcloud in enumerate(pointclouds):
@@ -97,7 +90,11 @@ def _convert_latents_to_pointclouds(
             idx=idx,
         )
 
-        with open(out_pointcloud_filepath, 'wb+') as f:
+        out_pointcloud_filepath.parent.mkdir(parents=True, exist_ok=True)
+        file = out_pointcloud_filepath.open('w+')
+        file.close()
+
+        with open(out_pointcloud_filepath, 'w', encoding="utf-8") as f:
             pointcloud.save(f)
 
     return pointclouds
@@ -110,13 +107,6 @@ def _convert_pointclouds_to_objs(
     model: Any,
 ) -> None:
     assert model is not None
-
-    Utils.Storage.build_prompt_mesh_filepath(
-        out_rootpath=source_rootpath,
-        prompt=prompt,
-        assert_exists=False,
-        idx=idx,
-    ).parent.mkdir(parents=True, exist_ok=True)
 
     for idx, pointcloud in enumerate(pointclouds):
         # Produce a mesh (with vertex colors)
@@ -136,7 +126,11 @@ def _convert_pointclouds_to_objs(
             idx=idx,
         )
 
-        with open(out_obj_filepath, 'w+', encoding="utf-8") as f:
+        out_obj_filepath.parent.mkdir(parents=True, exist_ok=True)
+        file = out_obj_filepath.open('w+')
+        file.close()
+
+        with open(out_obj_filepath, 'w', encoding="utf-8") as f:
             mesh.write_obj(f)
 
 
@@ -156,11 +150,15 @@ def main(source_rootpath: Path,
 
     #
 
+    print("")
     for prompt_enc, _ in prompts:
         prompt = Utils.Prompt.decode(prompt_enc)
 
         if not isinstance(prompt, str) or len(prompt) < 2:
             continue
+
+        print("")
+        print(prompt)
 
         pointclouds = _convert_latents_to_pointclouds(
             prompt=prompt,
@@ -174,6 +172,8 @@ def main(source_rootpath: Path,
             pointclouds=pointclouds,
             model=model,
         )
+        print("")
+    print("")
 
 
 ###
