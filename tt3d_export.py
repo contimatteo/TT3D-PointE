@@ -89,12 +89,10 @@ def _convert_latents_to_pointclouds(
             assert_exists=False,
             idx=idx,
         )
-
         out_pointcloud_filepath.parent.mkdir(parents=True, exist_ok=True)
-        file = out_pointcloud_filepath.open('w+')
-        file.close()
 
-        with open(out_pointcloud_filepath, 'w', encoding="utf-8") as f:
+        with open(out_pointcloud_filepath, 'w+', encoding="utf-8") as f:
+            f.write("")
             pointcloud.save(f)
 
     return pointclouds
@@ -125,12 +123,10 @@ def _convert_pointclouds_to_objs(
             assert_exists=False,
             idx=idx,
         )
-
         out_obj_filepath.parent.mkdir(parents=True, exist_ok=True)
-        file = out_obj_filepath.open('w+')
-        file.close()
 
-        with open(out_obj_filepath, 'w', encoding="utf-8") as f:
+        with open(out_obj_filepath, 'w+', encoding="utf-8") as f:
+            f.write("")
             mesh.write_obj(f)
 
 
