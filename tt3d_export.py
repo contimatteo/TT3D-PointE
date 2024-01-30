@@ -17,7 +17,7 @@ from point_e.util.point_cloud import PointCloud
 from point_e.util.pc_to_mesh import marching_cubes_mesh
 
 from utils import Utils
-from .tt3d_generate import build_sampler
+from tt3d_generate import build_sampler
 
 ###
 
