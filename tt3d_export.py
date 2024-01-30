@@ -78,11 +78,6 @@ def _convert_latents_to_pointclouds(
     pointclouds: List[PointCloud] = sampler.output_to_point_clouds(output=latents)
 
     for idx, pointcloud in enumerate(pointclouds):
-        # pointclouds: List[PointCloud] = []
-        # for idx, latent in enumerate(latents):
-        #     pointcloud = sampler.output_to_point_clouds(output=latent)
-        #     pointclouds.append(pointcloud)
-
         out_pointcloud_filepath = Utils.Storage.build_prompt_pointcloud_filepath(
             out_rootpath=source_rootpath,
             prompt=prompt,
@@ -91,9 +86,7 @@ def _convert_latents_to_pointclouds(
         )
         out_pointcloud_filepath.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(out_pointcloud_filepath, 'w+', encoding="utf-8") as f:
-            f.write("")
-            pointcloud.save(f)
+        pointcloud.save(str(out_pointcloud_filepath))
 
     return pointclouds
 
@@ -126,7 +119,7 @@ def _convert_pointclouds_to_objs(
         out_obj_filepath.parent.mkdir(parents=True, exist_ok=True)
 
         with open(out_obj_filepath, 'w+', encoding="utf-8") as f:
-            f.write("")
+            # f.write("")
             mesh.write_obj(f)
 
 
