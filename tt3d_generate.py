@@ -51,7 +51,7 @@ def __load_support_models() -> Tuple[Any, Any, Any, Any]:
 ###
 
 
-def _build_sampler() -> PointCloudSampler:
+def build_sampler() -> PointCloudSampler:
     base_model, upsampler_model, base_diffusion_model, upsampler_diffusion_model = __load_support_models()
 
     assert base_model is not None
@@ -125,7 +125,7 @@ def main(prompt_filepath: Path, out_rootpath: Path, batch_size: int, skip_existi
 
     #
 
-    sampler = _build_sampler()
+    sampler = build_sampler()
     prompts = Utils.Prompt.extract_from_file(filepath=prompt_filepath)
 
     print("")
