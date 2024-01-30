@@ -125,6 +125,50 @@ class _Storage():
 
         return out_prompt_latents_filepath
 
+    @staticmethod
+    def build_prompt_pointcloud_filepath(
+        out_rootpath: Path,
+        prompt: str,
+        assert_exists: bool,
+        idx: int,
+    ) -> Path:
+        assert "_" not in prompt
+        assert isinstance(idx, int)
+        assert idx >= 0
+
+        filename = f"pointcloud_{idx}.npz"
+        prompt_dirname = Utils.Prompt.encode(prompt)
+
+        out_path = out_rootpath.joinpath(prompt_dirname, "pointclouds", filename)
+
+        if assert_exists:
+            assert out_path.exists()
+            assert out_path.is_file()
+
+        return out_path
+
+    @staticmethod
+    def build_prompt_mesh_filepath(
+        out_rootpath: Path,
+        prompt: str,
+        assert_exists: bool,
+        idx: int,
+    ) -> Path:
+        assert "_" not in prompt
+        assert isinstance(idx, int)
+        assert idx >= 0
+
+        filename = f"model_{idx}.obj"
+        prompt_dirname = Utils.Prompt.encode(prompt)
+
+        out_path = out_rootpath.joinpath(prompt_dirname, "save", "export", filename)
+
+        if assert_exists:
+            assert out_path.exists()
+            assert out_path.is_file()
+
+        return out_path
+
 
 ###
 

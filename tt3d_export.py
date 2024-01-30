@@ -5,9 +5,19 @@ from pathlib import Path
 import argparse
 import torch
 
-from shap_e.models.download import load_model
-from shap_e.util.notebooks import decode_latent_mesh
+from pathlib import Path
+from point_e.diffusion.configs import DIFFUSION_CONFIGS
+from point_e.diffusion.configs import diffusion_from_config
+from point_e.diffusion.sampler import PointCloudSampler
+from point_e.models.download import load_checkpoint
+from point_e.models.configs import MODEL_CONFIGS
+from point_e.models.configs import model_from_config
+# from point_e.util.plotting import plot_point_cloud
+from point_e.util.point_cloud import PointCloud
+from point_e.util.pc_to_mesh import marching_cubes_mesh
+
 from utils import Utils
+from .tt3d_generate import build_sampler
 
 ###
 
@@ -20,23 +30,17 @@ device = Utils.Cuda.init()
 ###
 
 
-def _load_models() -> Any:
-    xm = load_model('transmitter', device=device)
-    return xm
-
-
-# def _load_latents() -> Iterator[Tuple[str, torch.Tensor]]:
-#     source_path = Path("outputs", "latents")
-#     print("")
-#     for prompt_path in source_path.rglob("*"):
-#         if prompt_path.is_dir():
-#             filename = "latents.pt"
-#             filepath = prompt_path.joinpath(filename)
-#             print(prompt_path.name)
-#             assert filepath.exists() and filepath.is_file()
-#             prompt = prompt_path.name.replace("_", " ")
-#             yield prompt, torch.load(filepath)
-#     print("")
+def _load_models() -> Tuple[PointCloudSampler, Any]:
+    sampler = build_sampler()
+    #
+    print('creating SDF model...')
+    model = model_from_config(MODEL_CONFIGS['sdf'], device)
+    model.eval()
+    #
+    print('loading SDF model...')
+    model.load_state_dict(load_checkpoint('sdf', device))
+    #
+    return sampler, model
 
 
 def _load_prompts_from_source_path(source_path: Path) -> T_Prompts:
@@ -48,64 +52,111 @@ def _load_prompts_from_source_path(source_path: Path) -> T_Prompts:
     # for prompt_path in source_path.rglob("*"):
     for prompt_path in source_path.iterdir():
         if prompt_path.is_dir():
-            prompt_dirname = prompt_path.name
-            # prompts.append((prompt_dirname, prompt_path))
-            yield (prompt_dirname, prompt_path)
+            prompt_enc = prompt_path.name
+            # prompts.append((prompt_enc, prompt_path))
+            yield (prompt_enc, prompt_path)
     # return prompts
 
 
-def _convert_latents_to_objs(
-    out_rootpath: Path,
-    xm_model: Any,
-    prompts: T_Prompts,
+def _convert_latents_to_pointclouds(
+    prompt: str,
+    source_rootpath: Path,
+    sampler: PointCloudSampler,
+) -> List[PointCloud]:
+    assert sampler is not None
+
+    source_prompt_latents_filepath = Utils.Storage.build_prompt_latents_filepath(
+        out_rootpath=source_rootpath,
+        prompt=prompt,
+        assert_exists=True,
+    )
+
+    latents = torch.load(source_prompt_latents_filepath)
+
+    # pointclouds: List[PointCloud] = sampler.output_to_point_clouds(output=latents)
+    # for idx, pointcloud in enumerate(pointclouds):
+    pointclouds: List[PointCloud] = []
+    for idx, latent in enumerate(latents):
+        pointcloud = sampler.output_to_point_cloud(output=latent)
+        pointclouds.append(pointcloud)
+
+        out_pointcloud_filepath = Utils.Storage.build_prompt_pointcloud_filepath(
+            out_rootpath=source_rootpath,
+            prompt=prompt,
+            assert_exists=False,
+            idx=idx,
+        )
+
+        with open(out_pointcloud_filepath, 'wb') as f:
+            pointcloud.save(f)
+
+    return pointclouds
+
+
+def _convert_pointclouds_to_objs(
+    prompt: str,
+    source_rootpath: Path,
+    pointclouds: List[PointCloud],
+    model: Any,
 ) -> None:
-    assert isinstance(out_rootpath, Path)
-    assert out_rootpath.exists()
-    assert out_rootpath.is_dir()
-    assert xm_model is not None
+    assert model is not None
 
-    print(">")
-    for prompt_dirname, prompt_path in prompts:
-        assert isinstance(prompt_dirname, str)
-        assert isinstance(prompt_path, Path)
+    for idx, pointcloud in enumerate(pointclouds):
+        # Produce a mesh (with vertex colors)
+        mesh = marching_cubes_mesh(
+            pc=pointcloud,
+            model=model,
+            batch_size=4096,
+            # grid_size=32,  # increase to 128 for resolution used in evals
+            grid_size=128,
+            progress=True,
+        )
 
-        latents_path = prompt_path.joinpath("ckpts", "latents.pt")
-        print(">")
-        print(">", latents_path)
-        print(">")
-        assert latents_path.exists()
-        assert latents_path.is_file()
-        latents = torch.load(latents_path)
+        out_obj_filepath = Utils.Storage.build_prompt_mesh_filepath(
+            out_rootpath=source_rootpath,
+            prompt=prompt,
+            assert_exists=False,
+            idx=idx,
+        )
 
-        out_path = out_rootpath.joinpath(prompt_dirname, "meshes")
-        out_path.mkdir(exist_ok=True, parents=True)
-
-        for idx, latent in enumerate(latents):
-            tri_mesh = decode_latent_mesh(xm_model, latent).tri_mesh()
-
-            ply_filepath = out_path.joinpath(f"mesh_{idx}.ply")
-            with open(ply_filepath, 'wb') as f:
-                tri_mesh.write_ply(f)
-
-            obj_filepath = out_path.joinpath(f"mesh_{idx}.obj")
-            with open(obj_filepath, 'w', encoding="utf-8") as f:
-                tri_mesh.write_obj(f)
-    print(">")
+        with open(out_obj_filepath, 'w', encoding="utf-8") as f:
+            mesh.write_obj(f)
 
 
 ###
 
 
-def main(source_path: Path, out_path: Path) -> None:
-    xm_model = _load_models()
+def main(source_rootpath: Path,
+         # skip_existing: bool,
+        ) -> None:
+    assert isinstance(source_rootpath, Path)
+    assert source_rootpath.exists()
+    assert source_rootpath.is_dir()
+    # assert isinstance(skip_existing, bool)
 
-    prompts = _load_prompts_from_source_path(source_path=source_path)
+    sampler, model = _load_models()
+    prompts = _load_prompts_from_source_path(source_path=source_rootpath)
 
-    _convert_latents_to_objs(
-        out_rootpath=out_path,
-        xm_model=xm_model,
-        prompts=prompts,
-    )
+    #
+
+    for prompt_enc, _ in prompts:
+        prompt = Utils.Prompt.decode(prompt_enc=prompt_enc)
+
+        if not isinstance(prompt, str) or len(prompt) < 2:
+            continue
+
+        pointclouds = _convert_latents_to_pointclouds(
+            prompt=prompt,
+            source_rootpath=source_rootpath,
+            sampler=sampler,
+        )
+
+        _convert_pointclouds_to_objs(
+            prompt=prompt,
+            source_rootpath=source_rootpath,
+            pointclouds=pointclouds,
+            model=model,
+        )
 
 
 ###
@@ -114,9 +165,13 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--source-path', type=Path, required=True)
-    parser.add_argument('--out-path', type=Path, required=True)
+    ### TODO: add logic to skip existing pointclouds and objs.
+    # parser.add_argument("--skip-existing", action="store_true", default=False)
+
     args = parser.parse_args()
 
     #
 
-    main(source_path=args.source_path, out_path=args.out_path)
+    main(source_rootpath=args.source_path,
+         # skip_existing=args.skip_existing,
+        )
