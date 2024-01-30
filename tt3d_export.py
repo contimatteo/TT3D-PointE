@@ -87,7 +87,7 @@ def _convert_latents_to_pointclouds(
             idx=idx,
         )
 
-        with open(out_pointcloud_filepath, 'wb') as f:
+        with open(out_pointcloud_filepath, 'wb+') as f:
             pointcloud.save(f)
 
     return pointclouds
@@ -119,7 +119,7 @@ def _convert_pointclouds_to_objs(
             idx=idx,
         )
 
-        with open(out_obj_filepath, 'w', encoding="utf-8") as f:
+        with open(out_obj_filepath, 'w+', encoding="utf-8") as f:
             mesh.write_obj(f)
 
 
