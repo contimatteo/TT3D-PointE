@@ -72,6 +72,16 @@ def _convert_latents_to_pointclouds(
     )
 
     latents = torch.load(source_prompt_latents_filepath)
+
+    #
+
+    Utils.Storage.build_prompt_pointcloud_filepath(
+        out_rootpath=source_rootpath,
+        prompt=prompt,
+        assert_exists=False,
+        idx=0,
+    ).parent.mkdir(parents=True, exist_ok=True)
+
     pointclouds: List[PointCloud] = sampler.output_to_point_clouds(output=latents)
 
     for idx, pointcloud in enumerate(pointclouds):
