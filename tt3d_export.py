@@ -110,16 +110,26 @@ def _convert_pointclouds_to_objs(
             progress=True,
         )
 
+        out_ply_filepath = Utils.Storage.build_prompt_mesh_filepath(
+            out_rootpath=source_rootpath,
+            prompt=prompt,
+            assert_exists=False,
+            idx=idx,
+            extension="ply",
+        )
+        out_ply_filepath.parent.mkdir(parents=True, exist_ok=True)
         out_obj_filepath = Utils.Storage.build_prompt_mesh_filepath(
             out_rootpath=source_rootpath,
             prompt=prompt,
             assert_exists=False,
             idx=idx,
+            extension="obj",
         )
         out_obj_filepath.parent.mkdir(parents=True, exist_ok=True)
 
+        with open(out_ply_filepath, 'wb+') as f:
+            mesh.write_ply(f)
         with open(out_obj_filepath, 'w+', encoding="utf-8") as f:
-            # f.write("")
             mesh.write_obj(f)
 
 

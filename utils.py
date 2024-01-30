@@ -1,5 +1,5 @@
 ### pylint: disable=missing-function-docstring,missing-class-docstring,missing-module-docstring,wrong-import-order
-from typing import Tuple, List
+from typing import Tuple, List, Literal
 
 import os
 import torch
@@ -153,12 +153,15 @@ class _Storage():
         prompt: str,
         assert_exists: bool,
         idx: int,
+        extension: Literal["obj", "ply"],
     ) -> Path:
         assert "_" not in prompt
         assert isinstance(idx, int)
         assert idx >= 0
+        assert isinstance(extension, str)
+        assert extension in ["obj", "ply"]
 
-        filename = f"model_{idx}.obj"
+        filename = f"model_{idx}.{extension}"
         prompt_dirname = Utils.Prompt.encode(prompt)
 
         out_path = out_rootpath.joinpath(prompt_dirname, "save", "export", filename)
