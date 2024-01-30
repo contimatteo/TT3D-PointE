@@ -140,7 +140,7 @@ def main(source_rootpath: Path,
     #
 
     for prompt_enc, _ in prompts:
-        prompt = Utils.Prompt.decode(prompt_enc=prompt_enc)
+        prompt = Utils.Prompt.decode(prompt_enc)
 
         if not isinstance(prompt, str) or len(prompt) < 2:
             continue
