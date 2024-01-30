@@ -111,6 +111,13 @@ def _convert_pointclouds_to_objs(
 ) -> None:
     assert model is not None
 
+    Utils.Storage.build_prompt_mesh_filepath(
+        out_rootpath=source_rootpath,
+        prompt=prompt,
+        assert_exists=False,
+        idx=idx,
+    ).parent.mkdir(parents=True, exist_ok=True)
+
     for idx, pointcloud in enumerate(pointclouds):
         # Produce a mesh (with vertex colors)
         mesh = marching_cubes_mesh(
