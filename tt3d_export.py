@@ -43,19 +43,18 @@ def _load_models() -> Tuple[PointCloudSampler, Any]:
     return sampler, model
 
 
-def _load_prompts_from_source_path(source_path: Path) -> T_Prompts:
-    assert isinstance(source_path, Path)
-    assert source_path.exists()
-    assert source_path.is_dir()
+def _load_prompts_from_source_path(source_rootpath: Path) -> T_Prompts:
+    assert isinstance(source_rootpath, Path)
+    assert source_rootpath.exists()
+    assert source_rootpath.is_dir()
 
-    # prompts: T_Prompts = []
-    # for prompt_path in source_path.rglob("*"):
-    for prompt_path in source_path.iterdir():
+    experiment_path = Utils.Storage.build_experiment_path(out_rootpath=source_rootpath)
+
+    # for prompt_path in source_path.iterdir():
+    for prompt_path in experiment_path.iterdir():
         if prompt_path.is_dir():
             prompt_enc = prompt_path.name
-            # prompts.append((prompt_enc, prompt_path))
             yield (prompt_enc, prompt_path)
-    # return prompts
 
 
 def _convert_latents_to_pointclouds(
@@ -145,7 +144,7 @@ def main(source_rootpath: Path,
     # assert isinstance(skip_existing, bool)
 
     sampler, model = _load_models()
-    prompts = _load_prompts_from_source_path(source_path=source_rootpath)
+    prompts = _load_prompts_from_source_path(source_rootpath=source_rootpath)
 
     #
 

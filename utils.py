@@ -103,25 +103,24 @@ class _Prompt():
 
 
 class _Storage():
+    MODEL_VERSION: str = "point-e"
 
-    @staticmethod
-    def build_prompt_path(
-        out_rootpath: Path,
-        prompt: str,
-    ) -> Path:
-        assert isinstance(prompt, str)
-        assert "_" not in prompt
-        prompt_dirname = Utils.Prompt.encode(prompt)
-        out_path = out_rootpath.joinpath("point-e", prompt_dirname)
+    @classmethod
+    def build_experiment_path(cls, out_rootpath: Path) -> Path:
+        out_path = out_rootpath.joinpath(cls.MODEL_VERSION)
         return out_path
 
     @classmethod
-    def build_prompt_latents_filepath(
-        cls,
-        out_rootpath: Path,
-        prompt: str,
-        assert_exists: bool,
-    ) -> Path:
+    def build_prompt_path(cls, out_rootpath: Path, prompt: str) -> Path:
+        assert isinstance(prompt, str)
+        assert "_" not in prompt
+        prompt_dirname = Utils.Prompt.encode(prompt)
+        experiment_path = cls.build_experiment_path(out_rootpath=out_rootpath)
+        out_path = experiment_path.joinpath(prompt_dirname)
+        return out_path
+
+    @classmethod
+    def build_prompt_latents_filepath(cls, out_rootpath: Path, prompt: str, assert_exists: bool) -> Path:
         filename = "last.pt"
 
         out_prompt_path = cls.build_prompt_path(out_rootpath=out_rootpath, prompt=prompt)
