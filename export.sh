@@ -1,6 +1,6 @@
 ###
 
-exit 0
+# exit 0
 
 
 GPU=0
