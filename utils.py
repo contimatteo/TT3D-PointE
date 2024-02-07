@@ -122,7 +122,6 @@ class _Storage():
     @classmethod
     def build_prompt_latents_filepath(cls, out_rootpath: Path, prompt: str, assert_exists: bool) -> Path:
         filename = "last.pt"
-
         out_prompt_path = cls.build_prompt_path(out_rootpath=out_rootpath, prompt=prompt)
         out_filepath = out_prompt_path.joinpath("ckpts", filename)
 
@@ -140,7 +139,6 @@ class _Storage():
         assert_exists: bool,
         idx: int,
     ) -> Path:
-        assert "_" not in prompt
         assert isinstance(idx, int)
         assert idx >= 0
 
