@@ -61,7 +61,8 @@ def _convert_latents_to_pointclouds(
     prompt: str,
     source_rootpath: Path,
     sampler: PointCloudSampler,
-) -> List[PointCloud]:
+# ) -> List[PointCloud]:
+) -> PointCloud:
     assert sampler is not None
 
     source_prompt_latents_filepath = Utils.Storage.build_prompt_latents_filepath(
@@ -74,70 +75,82 @@ def _convert_latents_to_pointclouds(
 
     #
 
+    # pointclouds: List[PointCloud] = sampler.output_to_point_clouds(output=latents)
+    # for idx, pointcloud in enumerate(pointclouds):
+    #     out_pointcloud_filepath = Utils.Storage.build_prompt_pointcloud_filepath(
+    #         out_rootpath=source_rootpath,
+    #         prompt=prompt,
+    #         assert_exists=False,
+    #         idx=idx,
+    #     )
+    #     out_pointcloud_filepath.parent.mkdir(parents=True, exist_ok=True)
+    #     pointcloud.save(str(out_pointcloud_filepath))
+
     pointclouds: List[PointCloud] = sampler.output_to_point_clouds(output=latents)
+    assert len(pointclouds) == 1
+    pointcloud = pointclouds[0]
+    
+    out_pointcloud_filepath = Utils.Storage.build_prompt_pointcloud_filepath(
+        out_rootpath=source_rootpath,
+        prompt=prompt,
+        assert_exists=False,
+    )
+    out_pointcloud_filepath.parent.mkdir(parents=True, exist_ok=True)
+    pointcloud.save(str(out_pointcloud_filepath))
 
-    for idx, pointcloud in enumerate(pointclouds):
-        out_pointcloud_filepath = Utils.Storage.build_prompt_pointcloud_filepath(
-            out_rootpath=source_rootpath,
-            prompt=prompt,
-            assert_exists=False,
-            idx=idx,
-        )
-        out_pointcloud_filepath.parent.mkdir(parents=True, exist_ok=True)
-
-        pointcloud.save(str(out_pointcloud_filepath))
-
-    return pointclouds
+    # return pointclouds
+    return pointcloud
 
 
 def _convert_pointclouds_to_objs(
     prompt: str,
     source_rootpath: Path,
-    pointclouds: List[PointCloud],
+    # pointclouds: List[PointCloud],
+    pointcloud: PointCloud,
     model: Any,
 ) -> None:
     assert model is not None
+    assert isinstance(pointcloud, PointCloud)
 
-    for idx, pointcloud in enumerate(pointclouds):
-        # Produce a mesh (with vertex colors)
-        mesh = marching_cubes_mesh(
-            pc=pointcloud,
-            model=model,
-            batch_size=4096,
-            # grid_size=32,  # increase to 128 for resolution used in evals
-            grid_size=128,
-            progress=True,
-        )
+    # for idx, pointcloud in enumerate(pointclouds):
+    
+    ### produce a mesh (with vertex colors)
+    mesh = marching_cubes_mesh(
+        pc=pointcloud,
+        model=model,
+        batch_size=4096,
+        # grid_size=32,  # increase to 128 for resolution used in evals
+        grid_size=128,
+        progress=True,
+    )
 
-        out_ply_filepath = Utils.Storage.build_prompt_mesh_filepath(
-            out_rootpath=source_rootpath,
-            prompt=prompt,
-            assert_exists=False,
-            idx=idx,
-            extension="ply",
-        )
-        out_ply_filepath.parent.mkdir(parents=True, exist_ok=True)
-        out_obj_filepath = Utils.Storage.build_prompt_mesh_filepath(
-            out_rootpath=source_rootpath,
-            prompt=prompt,
-            assert_exists=False,
-            idx=idx,
-            extension="obj",
-        )
-        out_obj_filepath.parent.mkdir(parents=True, exist_ok=True)
+    out_ply_filepath = Utils.Storage.build_prompt_mesh_filepath(
+        out_rootpath=source_rootpath,
+        prompt=prompt,
+        assert_exists=False,
+        # idx=idx,
+        extension="ply",
+    )
+    out_ply_filepath.parent.mkdir(parents=True, exist_ok=True)
+    out_obj_filepath = Utils.Storage.build_prompt_mesh_filepath(
+        out_rootpath=source_rootpath,
+        prompt=prompt,
+        assert_exists=False,
+        # idx=idx,
+        extension="obj",
+    )
+    out_obj_filepath.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(out_ply_filepath, 'wb+') as f:
-            mesh.write_ply(f)
-        with open(out_obj_filepath, 'w+', encoding="utf-8") as f:
-            mesh.write_obj(f)
+    with open(out_ply_filepath, 'wb+') as f:
+        mesh.write_ply(f)
+    with open(out_obj_filepath, 'w+', encoding="utf-8") as f:
+        mesh.write_obj(f)
 
 
 ###
 
 
-def main(source_rootpath: Path,
-         # skip_existing: bool,
-        ) -> None:
+def main(source_rootpath: Path) -> None:
     assert isinstance(source_rootpath, Path)
     assert source_rootpath.exists()
     assert source_rootpath.is_dir()
@@ -158,7 +171,8 @@ def main(source_rootpath: Path,
         print("")
         print(prompt)
 
-        pointclouds = _convert_latents_to_pointclouds(
+        # pointclouds = _convert_latents_to_pointclouds(
+        pointcloud = _convert_latents_to_pointclouds(
             prompt=prompt,
             source_rootpath=source_rootpath,
             sampler=sampler,
@@ -167,7 +181,8 @@ def main(source_rootpath: Path,
         _convert_pointclouds_to_objs(
             prompt=prompt,
             source_rootpath=source_rootpath,
-            pointclouds=pointclouds,
+            # pointclouds=pointclouds,
+            pointcloud=pointcloud,
             model=model,
         )
         print("")

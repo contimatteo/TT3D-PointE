@@ -138,13 +138,14 @@ class _Storage():
         out_rootpath: Path,
         prompt: str,
         assert_exists: bool,
-        idx: int,
+        # idx: int,
     ) -> Path:
         assert "_" not in prompt
-        assert isinstance(idx, int)
-        assert idx >= 0
+        # assert isinstance(idx, int)
+        # assert idx >= 0
 
-        filename = f"pointcloud_{idx}.npz"
+        # filename = f"pointcloud_{idx}.npz"
+        filename = f"pointcloud.npz"
         out_prompt_path = cls.build_prompt_path(out_rootpath=out_rootpath, prompt=prompt)
         out_filepath = out_prompt_path.joinpath("save", "pointclouds", filename)
 
@@ -160,15 +161,16 @@ class _Storage():
         out_rootpath: Path,
         prompt: str,
         assert_exists: bool,
-        idx: int,
+        # idx: int,
         extension: Literal["obj", "ply"],
     ) -> Path:
-        assert isinstance(idx, int)
-        assert idx >= 0
+        # assert isinstance(idx, int)
+        # assert idx >= 0
         assert isinstance(extension, str)
         assert extension in ["obj", "ply"]
 
-        filename = f"model_{idx}.{extension}"
+        # filename = f"model_{idx}.{extension}"
+        filename = f"model.{extension}"
         out_prompt_path = cls.build_prompt_path(out_rootpath=out_rootpath, prompt=prompt)
         out_filepath = out_prompt_path.joinpath("save", "export", filename)
 
