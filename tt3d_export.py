@@ -61,7 +61,7 @@ def _convert_latents_to_pointclouds(
     prompt: str,
     source_rootpath: Path,
     sampler: PointCloudSampler,
-# ) -> List[PointCloud]:
+    # ) -> List[PointCloud]:
 ) -> PointCloud:
     assert sampler is not None
 
@@ -89,7 +89,7 @@ def _convert_latents_to_pointclouds(
     pointclouds: List[PointCloud] = sampler.output_to_point_clouds(output=latents)
     assert len(pointclouds) == 1
     pointcloud = pointclouds[0]
-    
+
     out_pointcloud_filepath = Utils.Storage.build_prompt_pointcloud_filepath(
         out_rootpath=source_rootpath,
         prompt=prompt,
@@ -105,15 +105,40 @@ def _convert_latents_to_pointclouds(
 def _convert_pointclouds_to_objs(
     prompt: str,
     source_rootpath: Path,
-    # pointclouds: List[PointCloud],
     pointcloud: PointCloud,
     model: Any,
+    skip_existing: bool,
 ) -> None:
     assert model is not None
     assert isinstance(pointcloud, PointCloud)
 
-    # for idx, pointcloud in enumerate(pointclouds):
-    
+    out_ply_filepath = Utils.Storage.build_prompt_mesh_filepath(
+        out_rootpath=source_rootpath,
+        prompt=prompt,
+        assert_exists=False,
+        # idx=idx,
+        extension="ply",
+    )
+    out_obj_filepath = Utils.Storage.build_prompt_mesh_filepath(
+        out_rootpath=source_rootpath,
+        prompt=prompt,
+        assert_exists=False,
+        # idx=idx,
+        extension="obj",
+    )
+
+    if skip_existing:
+        if out_ply_filepath.exists() and out_obj_filepath.exists():
+            print("")
+            print("mesh already exists -> ", out_obj_filepath)
+            print("")
+            return
+
+    out_ply_filepath.parent.mkdir(parents=True, exist_ok=True)
+    out_obj_filepath.parent.mkdir(parents=True, exist_ok=True)
+
+    #
+
     ### produce a mesh (with vertex colors)
     mesh = marching_cubes_mesh(
         pc=pointcloud,
@@ -124,23 +149,6 @@ def _convert_pointclouds_to_objs(
         progress=True,
     )
 
-    out_ply_filepath = Utils.Storage.build_prompt_mesh_filepath(
-        out_rootpath=source_rootpath,
-        prompt=prompt,
-        assert_exists=False,
-        # idx=idx,
-        extension="ply",
-    )
-    out_ply_filepath.parent.mkdir(parents=True, exist_ok=True)
-    out_obj_filepath = Utils.Storage.build_prompt_mesh_filepath(
-        out_rootpath=source_rootpath,
-        prompt=prompt,
-        assert_exists=False,
-        # idx=idx,
-        extension="obj",
-    )
-    out_obj_filepath.parent.mkdir(parents=True, exist_ok=True)
-
     with open(out_ply_filepath, 'wb+') as f:
         mesh.write_ply(f)
     with open(out_obj_filepath, 'w+', encoding="utf-8") as f:
@@ -150,11 +158,11 @@ def _convert_pointclouds_to_objs(
 ###
 
 
-def main(source_rootpath: Path) -> None:
+def main(source_rootpath: Path, skip_existing: bool) -> None:
     assert isinstance(source_rootpath, Path)
     assert source_rootpath.exists()
     assert source_rootpath.is_dir()
-    # assert isinstance(skip_existing, bool)
+    assert isinstance(skip_existing, bool)
 
     sampler, model = _load_models()
     prompts = _load_prompts_from_source_path(source_rootpath=source_rootpath)
@@ -181,9 +189,9 @@ def main(source_rootpath: Path) -> None:
         _convert_pointclouds_to_objs(
             prompt=prompt,
             source_rootpath=source_rootpath,
-            # pointclouds=pointclouds,
             pointcloud=pointcloud,
             model=model,
+            skip_existing=skip_existing,
         )
         print("")
     print("")
@@ -195,13 +203,13 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--source-path', type=Path, required=True)
-    ### TODO: add logic to skip existing pointclouds and objs.
-    # parser.add_argument("--skip-existing", action="store_true", default=False)
+    parser.add_argument("--skip-existing", action="store_true", default=False)
 
     args = parser.parse_args()
 
     #
 
-    main(source_rootpath=args.source_path,
-         # skip_existing=args.skip_existing,
-        )
+    main(
+        source_rootpath=args.source_path,
+        skip_existing=args.skip_existing,
+    )
