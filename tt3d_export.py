@@ -179,20 +179,31 @@ def main(source_rootpath: Path, skip_existing: bool) -> None:
         print("")
         print(prompt)
 
-        # pointclouds = _convert_latents_to_pointclouds(
-        pointcloud = _convert_latents_to_pointclouds(
-            prompt=prompt,
-            source_rootpath=source_rootpath,
-            sampler=sampler,
-        )
+        try:
+            # pointclouds = _convert_latents_to_pointclouds(
+            pointcloud = _convert_latents_to_pointclouds(
+                prompt=prompt,
+                source_rootpath=source_rootpath,
+                sampler=sampler,
+            )
+            _convert_pointclouds_to_objs(
+                prompt=prompt,
+                source_rootpath=source_rootpath,
+                pointcloud=pointcloud,
+                model=model,
+                skip_existing=skip_existing,
+            )
+        except Exception as e:
+            print("")
+            print("")
+            print("========================================")
+            print("Error while running prompt -> ", prompt)
+            print(e)
+            print("========================================")
+            print("")
+            print("")
+            continue
 
-        _convert_pointclouds_to_objs(
-            prompt=prompt,
-            source_rootpath=source_rootpath,
-            pointcloud=pointcloud,
-            model=model,
-            skip_existing=skip_existing,
-        )
         print("")
     print("")
 

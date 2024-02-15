@@ -143,13 +143,25 @@ def main(
         print("")
         print(prompt)
 
-        _generate_latents(
-            prompt=prompt,
-            out_rootpath=out_rootpath,
-            sampler=sampler,
-            skip_existing=skip_existing,
-            # batch_size=batch_size,
-        )
+        try:
+            _generate_latents(
+                prompt=prompt,
+                out_rootpath=out_rootpath,
+                sampler=sampler,
+                skip_existing=skip_existing,
+                # batch_size=batch_size,
+            )
+        except Exception as e:
+            print("")
+            print("")
+            print("========================================")
+            print("Error while running prompt -> ", prompt)
+            print(e)
+            print("========================================")
+            print("")
+            print("")
+            continue
+
         print("")
     print("")
 
