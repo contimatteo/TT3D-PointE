@@ -1,10 +1,22 @@
 ###
-### Unibo CV-LAB Server run script 
+
+exit 1
+
+
+GPU=0
+ENV="test"
+PROMPT="n0_n1"
+EXPERIMENT_PREFIX="t3bench/single"
+
+ROOT_DIR="/media/data2/mconti/TT3D"
+OUT_DIR="${ROOT_DIR}/outputs/${ENV}/${EXPERIMENT_PREFIX}/${PROMPT}"
+PROMPT_FILE="${ROOT_DIR}/prompts/${EXPERIMENT_PREFIX}/${PROMPT}.txt"
+
+
 ###
 
-exit 0
 
-CUDA_VISIBLE_DEVICES=1 python3 tt3d_generate.py \
-  --prompt-file /media/data2/mconti/TT3D/prompts/test.t3bench.n1.txt \
-  --out-path /media/data2/mconti/TT3D/outputs/PointE/
-# --skip-existing  
+CUDA_VISIBLE_DEVICES=${GPU} python3 tt3d_generate.py \
+  --prompt-file $PROMPT_FILE \
+  --out-path "${OUT_DIR}/OpenAI-PointE/" \
+  --skip-existing  

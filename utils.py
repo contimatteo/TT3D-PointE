@@ -103,74 +103,80 @@ class _Prompt():
 
 
 class _Storage():
+    MODEL_VERSION: str = "point-e"
 
-    @staticmethod
-    def build_prompt_latents_filepath(
-        out_rootpath: Path,
-        prompt: str,
-        assert_exists: bool,
-    ) -> Path:
-        assert "_" not in prompt
-
-        filename = "latents.pt"
-        prompt_dirname = Utils.Prompt.encode(prompt)
-
-        out_prompt_path = out_rootpath.joinpath(prompt_dirname)
-        out_prompt_ckpts_path = out_prompt_path.joinpath("ckpts")
-        out_prompt_latents_filepath = out_prompt_ckpts_path.joinpath(filename)
-
-        if assert_exists:
-            assert out_prompt_latents_filepath.exists()
-            assert out_prompt_latents_filepath.is_file()
-
-        return out_prompt_latents_filepath
-
-    @staticmethod
-    def build_prompt_pointcloud_filepath(
-        out_rootpath: Path,
-        prompt: str,
-        assert_exists: bool,
-        idx: int,
-    ) -> Path:
-        assert "_" not in prompt
-        assert isinstance(idx, int)
-        assert idx >= 0
-
-        filename = f"pointcloud_{idx}.npz"
-        prompt_dirname = Utils.Prompt.encode(prompt)
-
-        out_path = out_rootpath.joinpath(prompt_dirname, "pointclouds", filename)
-
-        if assert_exists:
-            assert out_path.exists()
-            assert out_path.is_file()
-
+    @classmethod
+    def build_experiment_path(cls, out_rootpath: Path) -> Path:
+        out_path = out_rootpath.joinpath(cls.MODEL_VERSION)
         return out_path
 
-    @staticmethod
-    def build_prompt_mesh_filepath(
+    @classmethod
+    def build_prompt_path(cls, out_rootpath: Path, prompt: str) -> Path:
+        assert isinstance(prompt, str)
+        assert "_" not in prompt
+        prompt_dirname = Utils.Prompt.encode(prompt)
+        experiment_path = cls.build_experiment_path(out_rootpath=out_rootpath)
+        out_path = experiment_path.joinpath(prompt_dirname)
+        return out_path
+
+    @classmethod
+    def build_prompt_latents_filepath(cls, out_rootpath: Path, prompt: str, assert_exists: bool) -> Path:
+        filename = "last.pt"
+        out_prompt_path = cls.build_prompt_path(out_rootpath=out_rootpath, prompt=prompt)
+        out_filepath = out_prompt_path.joinpath("ckpts", filename)
+
+        if assert_exists:
+            assert out_filepath.exists()
+            assert out_filepath.is_file()
+
+        return out_filepath
+
+    @classmethod
+    def build_prompt_pointcloud_filepath(
+        cls,
         out_rootpath: Path,
         prompt: str,
         assert_exists: bool,
-        idx: int,
+        # idx: int,
+    ) -> Path:
+        # assert isinstance(idx, int)
+        # assert idx >= 0
+
+        # filename = f"pointcloud_{idx}.npz"
+        filename = "pointcloud.npz"
+        out_prompt_path = cls.build_prompt_path(out_rootpath=out_rootpath, prompt=prompt)
+        out_filepath = out_prompt_path.joinpath("save", "pointclouds", filename)
+
+        if assert_exists:
+            assert out_filepath.exists()
+            assert out_filepath.is_file()
+
+        return out_filepath
+
+    @classmethod
+    def build_prompt_mesh_filepath(
+        cls,
+        out_rootpath: Path,
+        prompt: str,
+        assert_exists: bool,
+        # idx: int,
         extension: Literal["obj", "ply"],
     ) -> Path:
-        assert "_" not in prompt
-        assert isinstance(idx, int)
-        assert idx >= 0
+        # assert isinstance(idx, int)
+        # assert idx >= 0
         assert isinstance(extension, str)
         assert extension in ["obj", "ply"]
 
-        filename = f"model_{idx}.{extension}"
-        prompt_dirname = Utils.Prompt.encode(prompt)
-
-        out_path = out_rootpath.joinpath(prompt_dirname, "save", "export", filename)
+        # filename = f"model_{idx}.{extension}"
+        filename = f"model.{extension}"
+        out_prompt_path = cls.build_prompt_path(out_rootpath=out_rootpath, prompt=prompt)
+        out_filepath = out_prompt_path.joinpath("save", "export", filename)
 
         if assert_exists:
-            assert out_path.exists()
-            assert out_path.is_file()
+            assert out_filepath.exists()
+            assert out_filepath.is_file()
 
-        return out_path
+        return out_filepath
 
 
 ###

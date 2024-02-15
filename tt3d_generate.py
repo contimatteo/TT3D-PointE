@@ -21,8 +21,6 @@ from utils import Utils
 
 device = Utils.Cuda.init()
 
-SAMPLER_AUX_CHANNELS = ['R', 'G', 'B']
-
 ###
 
 
@@ -64,7 +62,7 @@ def build_sampler() -> PointCloudSampler:
         models=[base_model, upsampler_model],
         diffusions=[base_diffusion_model, upsampler_diffusion_model],
         num_points=[1024, 4096 - 1024],
-        aux_channels=SAMPLER_AUX_CHANNELS,
+        aux_channels=['R', 'G', 'B'],
         guidance_scale=[3.0, 0.0],
         model_kwargs_key_filter=('texts', ''),  # Do not condition the upsampler at all
     )
@@ -75,13 +73,15 @@ def _generate_latents(
     out_rootpath: Path,
     sampler: PointCloudSampler,
     skip_existing: bool,
-    batch_size: int = 1,
+    # batch_size: int = 1,
 ) -> None:
     assert isinstance(prompt, str)
     assert len(prompt) > 1
     assert isinstance(sampler, PointCloudSampler)
-    assert isinstance(batch_size, int)
-    assert 1 <= batch_size <= 1000  ### avoid naive mistakes ...
+    # assert isinstance(batch_size, int)
+    # assert 1 <= batch_size <= 1000  ### avoid naive mistakes ...
+
+    batch_size = 1
 
     out_prompt_latents_filepath = Utils.Storage.build_prompt_latents_filepath(
         out_rootpath=out_rootpath,
@@ -90,7 +90,9 @@ def _generate_latents(
     )
 
     if skip_existing and out_prompt_latents_filepath.exists():
+        print("")
         print("latents already exists -> ", out_prompt_latents_filepath)
+        print("")
         return
 
     out_prompt_latents_filepath.parent.mkdir(parents=True, exist_ok=True)
@@ -99,7 +101,7 @@ def _generate_latents(
 
     latents = None
     model_kwargs = dict(texts=[prompt])
-    for x in tqdm(sampler.sample_batch_progressive(batch_size=1, model_kwargs=model_kwargs)):
+    for x in tqdm(sampler.sample_batch_progressive(batch_size=batch_size, model_kwargs=model_kwargs)):
         latents = x
 
     assert isinstance(latents, torch.Tensor)
@@ -112,10 +114,15 @@ def _generate_latents(
 ###
 
 
-def main(prompt_filepath: Path, out_rootpath: Path, batch_size: int, skip_existing: bool) -> None:
+def main(
+    prompt_filepath: Path,
+    out_rootpath: Path,
+    # batch_size: int,
+    skip_existing: bool,
+) -> None:
     assert isinstance(prompt_filepath, Path)
     assert isinstance(out_rootpath, Path)
-    assert isinstance(batch_size, int)
+    # assert isinstance(batch_size, int)
     assert isinstance(skip_existing, bool)
 
     if out_rootpath.exists():
@@ -136,13 +143,25 @@ def main(prompt_filepath: Path, out_rootpath: Path, batch_size: int, skip_existi
         print("")
         print(prompt)
 
-        _generate_latents(
-            prompt=prompt,
-            out_rootpath=out_rootpath,
-            sampler=sampler,
-            skip_existing=skip_existing,
-            batch_size=batch_size,
-        )
+        try:
+            _generate_latents(
+                prompt=prompt,
+                out_rootpath=out_rootpath,
+                sampler=sampler,
+                skip_existing=skip_existing,
+                # batch_size=batch_size,
+            )
+        except Exception as e:
+            print("")
+            print("")
+            print("========================================")
+            print("Error while running prompt -> ", prompt)
+            print(e)
+            print("========================================")
+            print("")
+            print("")
+            continue
+
         print("")
     print("")
 
@@ -154,7 +173,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--prompt-file', type=Path, required=True)
     parser.add_argument('--out-path', type=Path, required=True)
-    parser.add_argument('--batch-size', type=int, default=1)
+    # parser.add_argument('--batch-size', type=int, default=1)
     parser.add_argument("--skip-existing", action="store_true", default=False)
 
     args = parser.parse_args()
@@ -164,6 +183,6 @@ if __name__ == '__main__':
     main(
         prompt_filepath=args.prompt_file,
         out_rootpath=args.out_path,
-        batch_size=args.batch_size,
+        # batch_size=args.batch_size,
         skip_existing=args.skip_existing,
     )
