@@ -3,7 +3,7 @@
 exit 1
 
 
-GPU=1
+GPU=3
 ENV="report"
 PROMPT="n100"
 EXPERIMENT_PREFIX="t3bench/single"
